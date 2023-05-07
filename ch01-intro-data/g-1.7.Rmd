@@ -23,6 +23,7 @@ data("loan50")
 
 loan50 %>% head()
 
+loan50 %>% colnames()
 
 ```
 

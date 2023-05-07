@@ -1,0 +1,58 @@
+---
+title: "EXAMPLE 1.8"
+author: "Awesome Me"
+date: "2023-05-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## EXAMPLE 1.8
+
+
+
+```{r}
+
+# load library
+library(tidyverse)
+library(openintro)
+
+```
+
+```{r}
+
+# load loan data set
+data("county")
+
+county %>% head()
+
+county %>% colnames()
+
+```
+
+This example examines the relationship between a county’s population change from 2010 to 2017
+and median household income, which is visualized as a scatter plot in Figure 1.9. 
+Are these variables associated?
+
+```{r}
+#  counties with more units in multi-unit structures are associated with lower homeownership 
+# – these variables are said to be negatively associated
+
+ggplot(data = county) + 
+  geom_point(mapping = aes(x = multi_unit, y = homeownership)) + 
+  labs(title ="multi-unit structures & homeownership", x = "multi-unit structures", y = "homeownership")
+
+```
+
+```{r}
+#  the relationship between the median_hh_income and pop change 
+# – these variables are said to be positively associated
+
+ggplot(data = county) + 
+  geom_point(mapping = aes(x = median_hh_income, y = pop_change)) + 
+  labs(title ="median hh income & pop change", x = "median hh income", y = "pop change")
+
+```
+
