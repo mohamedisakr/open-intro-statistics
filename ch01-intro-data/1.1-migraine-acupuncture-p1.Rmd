@@ -14,9 +14,16 @@ output: html_document
 # install openintro package
 # install.packages("openintro") # already installed
 
+```
+```{r}
+
 # load library
 library(tidyverse)
 library(openintro)
+
+```
+
+```{r}
 
 # load migraine data set
 data(migraine)
@@ -25,19 +32,59 @@ migraine %>% head()
 
 migraine %>% distinct(group)
 
-# percent of patients group (treatment - control) - pain free
-patients_group_by_pain_percent <- migraine %>% 
+```
+
+```{r}
+# percent of patients group (treatment - control)
+patients_group_percent <- migraine %>% 
   group_by(group) %>% 
   summarise(count = n()) %>%
   mutate(percent = (round(count / sum(count), 2) * 100)) %>% 
   arrange((percent))
 
-patients_group_by_pain_percent
-
-# aggregating
-
+patients_group_percent
 
 ```
+
+```{r}
+# percent of patients group (treatment - control) & pain free
+patients_group_by_pain <- migraine %>% 
+  group_by(group, pain_free) %>% 
+  summarise(count = n()) %>%
+  arrange((group))
+
+patients_group_by_pain
+
+```
+
+```{r}
+
+# Contingency Tables using dplyr & tidyr
+# http://analyticswithr.com/contingencytables.html
+
+patients_group_pain_cross_tab <- migraine %>% 
+  group_by(group, pain_free) %>% 
+  summarise(count = n()) %>%
+  spread(pain_free, count) 
+
+patients_group_pain_cross_tab
+
+```
+
+```{r}
+
+# Contingency Tables using table
+# http://analyticswithr.com/contingencytables.html
+
+patients_group_pain_table <- table(migraine$group, migraine$pain_free)
+
+patients_group_pain_table
+
+# table(patients_group_pain_table)
+
+```
+
+
 
 
 ## (b) What percent were pain free in the control group?
