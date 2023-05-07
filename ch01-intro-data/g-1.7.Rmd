@@ -1,0 +1,56 @@
+---
+title: "GUIDED PRACTICE 1.7"
+author: "Awesome Me"
+date: "2023-05-07"
+output: html_document
+---
+
+## GUIDED PRACTICE 1.7
+
+
+```{r}
+
+# load library
+library(tidyverse)
+library(openintro)
+
+```
+
+```{r}
+
+# load loan data set
+data("loan50")
+
+loan50 %>% head()
+
+
+```
+
+Examine the variables in the loan50 data set, which are described in Figure 1.4 on page 12. Create
+two questions about possible relationships between variables in loan50 that are of interest to you.
+
+
+```{r }
+# 2 example questions: 
+# (1) What is the relationship between loan amount and total income? 
+ggplot(data = loan50, aes(x = total_income, y=loan_amount)) + geom_point(size = 2)
+
+
+# (2) If someone’s income is above the average, will their interest rate tend to be above or below the average?
+
+avg_income = mean(loan50$total_income)
+avg_income
+
+avg_interest_rate = mean(loan50$interest_rate)
+avg_interest_rate
+
+above_avg_income <- loan50 %>% 
+  filter(loan50$total_income > mean(loan50$total_income)) %>%
+  mutate(interest_rate_trend = ifelse(interest_rate > mean(interest_rate), "above", "below")) %>%
+  select(total_income, interest_rate_trend) %>%
+  arrange(desc(total_income))
+
+above_avg_income
+
+```
+
