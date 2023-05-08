@@ -1,0 +1,67 @@
+---
+title: "Smoking habits of UK residents"
+author: "Awesome Me"
+date: "2023-05-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Smoking habits of UK residents
+
+```{r}
+
+# load library
+library(tidyverse)
+library(openintro)
+
+```
+
+```{r}
+ 
+# load loan data set
+data("smoking")
+
+smoking %>% head()
+
+smoking %>% colnames()
+
+```
+
+### (a) What does each row of the data matrix represent?
+
+### (b) How many participants were included in the survey?
+```{r}
+smoking |> nrow()
+
+```
+
+### (c) Indicate whether each variable in the study is numerical or categorical. If numerical, identify as continuous or discrete. If categorical, indicate if the variable is ordinal.
+
+```{r}
+
+smoking |> str()
+
+levels(smoking$gender)
+
+levels(smoking$marital_status)
+
+levels(smoking$highest_qualification)
+
+levels(smoking$nationality)
+
+levels(smoking$ethnicity)
+
+levels(smoking$gross_income)
+
+levels(smoking$region)
+
+levels(smoking$smoke)
+
+levels(smoking$type)
+
+```
+
+
