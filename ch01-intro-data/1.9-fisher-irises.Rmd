@@ -1,0 +1,55 @@
+---
+title: "Fisher’s irises"
+author: "Awesome Me"
+date: "2023-05-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Fisher’s irises
+
+
+```{r}
+
+# load library
+library(tidyverse)
+library(openintro)
+
+```
+
+```{r}
+ 
+# load loan data set
+data("iris")
+
+iris %>% head()
+
+iris %>% colnames()
+
+```
+
+### (a) How many cases were included in the data?
+```{r}
+iris %>% nrow()
+```
+
+
+### (b) How many numerical variables are included in the data? Indicate what they are, and if they are continuous or discrete.
+```{r}
+iris %>% str()
+
+```
+
+
+
+### (c) How many categorical variables are included in the data, and what are they? List the corresponding levels (categories)
+
+```{r}
+iris %>% str()
+
+levels(iris$Species)
+
+```
