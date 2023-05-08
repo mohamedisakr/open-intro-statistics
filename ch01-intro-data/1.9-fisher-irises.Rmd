@@ -22,7 +22,7 @@ library(openintro)
 
 ```{r}
  
-# load loan data set
+# load iris data set
 data("iris")
 
 iris %>% head()

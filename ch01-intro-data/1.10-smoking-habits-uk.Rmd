@@ -21,7 +21,7 @@ library(openintro)
 
 ```{r}
  
-# load loan data set
+# load smoking data set
 data("smoking")
 
 smoking %>% head()
