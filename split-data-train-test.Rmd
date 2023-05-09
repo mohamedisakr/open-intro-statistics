@@ -1,0 +1,47 @@
+---
+title: "Splitting data to training & testing"
+author: "Awesome Me"
+date: "2023-05-09"
+output: html_document
+---
+
+## Splitting data to training & testing
+
+
+```{r}
+
+# load library
+library(tidyverse)
+library(openintro)
+
+```
+
+```{r}
+
+# load data set
+data("loan50") |> as_tibble()
+
+loan50 %>% head()
+
+loan50 %>% colnames()
+
+```
+
+```{r}
+# split data into training & testing
+loan50 <- loan50 |> mutate(row_id = row_number())
+
+# add row_id to original data set
+# pull 70 % of data & pull to training
+training_df <- loan50 |> sample_frac(0.70)
+
+# pull 30 % (the rest) to testing & remove row_id
+testing_df <- loan50 |> 
+  anti_join(training_df, by = "row_id") |> 
+  select(-row_id)
+
+# remove row_id
+training_df <- training_df  |> select(-row_id)
+
+```
+
