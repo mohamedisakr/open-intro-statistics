@@ -38,6 +38,7 @@ library(ggplot2)
 library(lubridate)
 library(arules)
 library(arulesViz)
+library(here)
 # library(plyr)
 
 ```
@@ -45,16 +46,40 @@ library(arulesViz)
 ## data preprocessing and exploring
 
 ```{r}
-retail <- read_excel('https://archive.ics.uci.edu/ml/machine-learning-databases/00352/Online Retail.xlsx')
+retail <- read_excel(here('data', 'online_retail.xlsx'))
 retail
 
 retail <- retail[complete.cases(retail), ]
+
 retail <- retail %>% mutate(Description = as.factor(Description))
 retail <- retail %>% mutate(Country = as.factor(Country))
+
 retail$Date <- as.Date(retail$InvoiceDate)
 retail$Time <- format(retail$InvoiceDate,"%H:%M:%S")
-retail$InvoiceNo <- as.numeric(as.character(retail$InvoiceNo))glimpse(retail)
+retail$InvoiceNo <- as.numeric(as.character(retail$InvoiceNo))
 
+glimpse(retail)
+
+colnames(retail)
 ```
 
+
+## What time do people often purchase online?
+
+```{r}
+# In order to find the answer to this question, we need to extract “hour” from the time column.
+
+retail$Time <- as.factor(retail$Time)
+
+a <- hms(as.character(retail$Time))
+
+retail$Time = hour(a)
+
+retail %>% 
+  ggplot(aes(x=Time)) + 
+  geom_histogram(stat="count",fill="indianred")
+
+# conclusion 
+# There is a clear bias between the hour of day and order volume. Most orders happened between 10:00–15:00
+```
 
