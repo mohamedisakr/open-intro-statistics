@@ -1,0 +1,60 @@
+---
+title: "A Gentle Introduction on Market Basket Analysis — Association Rules"
+author: "Awesome Me"
+date: "2023-05-10"
+link-citations: true
+output: html_document
+---
+
+### A Gentle Introduction on Market Basket Analysis — Association Rules
+#### https://towardsdatascience.com/a-gentle-introduction-on-market-basket-analysis-association-rules-fa4b986a40ce
+
+### dataset 
+#### from UCI Machine Learning repository. The dataset is called “Online Retail” and can be found here. It contains all the transactions occurring between 01/12/2010 and 09/12/2011 for a UK-based and registered online retailer
+
+#### https://archive.ics.uci.edu/ml/machine-learning-databases/00352/Online%20Retail.xlsx
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## install packages
+
+```{r}
+install.packages("readxl")
+
+```
+
+
+## load packages
+
+```{r}
+
+library(tidyverse)
+library(readxl)
+library(knitr)
+library(ggplot2)
+library(lubridate)
+library(arules)
+library(arulesViz)
+# library(plyr)
+
+```
+
+## data preprocessing and exploring
+
+```{r}
+retail <- read_excel('https://archive.ics.uci.edu/ml/machine-learning-databases/00352/Online Retail.xlsx')
+retail
+
+retail <- retail[complete.cases(retail), ]
+retail <- retail %>% mutate(Description = as.factor(Description))
+retail <- retail %>% mutate(Country = as.factor(Country))
+retail$Date <- as.Date(retail$InvoiceDate)
+retail$Time <- format(retail$InvoiceDate,"%H:%M:%S")
+retail$InvoiceNo <- as.numeric(as.character(retail$InvoiceNo))glimpse(retail)
+
+```
+
+
