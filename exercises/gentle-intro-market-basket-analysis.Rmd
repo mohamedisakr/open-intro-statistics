@@ -80,6 +80,7 @@ rm(list = grep("^onlineretail", ls(), value = TRUE))
 ## clean up and add data to prepare for analysis
 
 ```{r}
+
 retail <- retail[complete.cases(retail), ]
 
 retail <- retail %>% mutate(Description = as.factor(Description))
@@ -89,13 +90,8 @@ retail$Date <- as.Date(retail$InvoiceDate)
 retail$Time <- format(retail$InvoiceDate,"%H:%M:%S")
 retail$InvoiceNo <- as.numeric(as.character(retail$InvoiceNo))
 
-glimpse(retail)
-
-colnames(retail)
 
 ```
-
-
 
 ## What time do people often purchase online?
 
@@ -116,11 +112,11 @@ retail %>%
 # There is a clear bias between the hour of day and order volume. Most orders happened between 10:00–15:00
 ```
 
-## search for all rows with invoice no. 576339
+## search for all rows with invoice no. 576339 (highest count of row no)
 
 ```{r}
 
-retail %>% filter(InvoiceNo == '576339')
+retail %>% filter(InvoiceNo == '576339') %>% arrange(desc(Quantity))
 
 ```
 
@@ -163,14 +159,6 @@ ggplot(data = items_by_each_customer, aes(x=n_items))+
   coord_cartesian(xlim=c(0,80))
   
   
-# retail %>% 
-#   group_by(InvoiceNo) %>% 
-#   summarize(n_items = mean(Quantity)) %>%
-#   ggplot(aes(x=n_items))+
-#   geom_histogram(fill="indianred", bins = 100000) + 
-#   geom_rug()+
-#   coord_cartesian(xlim=c(0,80))
-
 # conclusion 
 # People mostly purchased less than 10 items (less than 10 items in each invoice)
 ```
