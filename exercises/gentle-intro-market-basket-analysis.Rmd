@@ -40,7 +40,7 @@ install.packages("onlineretail")
 ```{r}
 
 library(tidyverse)
-library(readxl)
+# library(readxl)
 library(knitr)
 library(ggplot2)
 library(lubridate)
@@ -90,23 +90,40 @@ retail$Date <- as.Date(retail$InvoiceDate)
 retail$Time <- format(retail$InvoiceDate,"%H:%M:%S")
 retail$InvoiceNo <- as.numeric(as.character(retail$InvoiceNo))
 
+# find columns with NA’s
+colSums(is.na(retail)) > 0
 
 ```
+
+## count no of customers
+
+```{r}
+n_distinct(retail$CustomerID)
+
+```
+
 
 ## What time do people often purchase online?
 
 ```{r}
-# In order to find the answer to this question, we need to extract “hour” from the time column.
+# to find the answer to this question, we need to extract “hour” from the time column.
+
+retail %>% str()
 
 retail$Time <- as.factor(retail$Time)
 
 a <- hms(as.character(retail$Time))
 
-retail$Time = hour(a)
+retail$Hour = hour(a)
+
+# count hours
+n_distinct(retail$Hour)
+retail %>% distinct(Hour)
 
 retail %>% 
-  ggplot(aes(x=Time)) + 
-  geom_histogram(stat="count",fill="indianred")
+  ggplot(aes( x = Hour)) + 
+  geom_histogram(stat="count", bins = 15, fill="indianred") #  
+
 
 # conclusion 
 # There is a clear bias between the hour of day and order volume. Most orders happened between 10:00–15:00
@@ -134,21 +151,15 @@ retail %>%
 
 ```
 
-```{r}
-
-retail %>% colnames()
-
-```
-
-
 
 ## How many items each customer buy?
 
 ```{r}
+# group by invoice no
 items_by_each_customer <- 
-  retail |> 
+  retail %>% 
   group_by(InvoiceNo) %>% 
-  summarize(n_items = mean(Quantity)) %>% 
+  summarize(n_items = mean(Quantity)) %>% #  sum(Quantity)
   arrange(desc(n_items))
 
 items_by_each_customer
@@ -161,6 +172,31 @@ ggplot(data = items_by_each_customer, aes(x=n_items))+
   
 # conclusion 
 # People mostly purchased less than 10 items (less than 10 items in each invoice)
+```
+
+## Top 10 best sellers
+```{r}
+
+top_10_best_sellers <- as_tibble(
+  retail %>% 
+  group_by(StockCode, Description) %>% 
+  summarize(count = n()) %>% 
+  arrange(desc(count)) #%>% 
+  # slice_max(order_by = count, n = 10)
+  # top_n(10, count)
+)
+
+
+top_10_best_sellers <- top_10_best_sellers %>% head(10)
+
+top_10_best_sellers %>% str()
+
+
+# top_10_best_sellers %>%
+ggplot(data = top_10_best_sellers, aes(x = reorder(Description, count), y = count))+
+  geom_bar(stat="identity",fill="indian red")+
+  coord_flip()
+
 ```
 
 
