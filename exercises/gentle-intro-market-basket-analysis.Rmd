@@ -14,6 +14,12 @@ output: html_document
 
 #### https://archive.ics.uci.edu/ml/machine-learning-databases/00352/Online%20Retail.xlsx
 
+### or
+
+#### https://github.com/allanvc/onlineretail/
+#### https://cran.r-project.org/web/packages/onlineretail/onlineretail.pdf
+
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -23,6 +29,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 install.packages("readxl")
+
+install.packages("onlineretail")
 
 ```
 
@@ -41,14 +49,37 @@ library(arulesViz)
 library(here)
 # library(plyr)
 
+# load data set from onlineretail package
+library(onlineretail)
 ```
 
 ## data preprocessing and exploring
 
 ```{r}
-retail <- read_excel(here('data', 'online_retail.xlsx'))
-retail
+# read excel file
+# retail <- read_excel(here('data', 'online_retail.xlsx'))
+# retail
 
+# rename data set & convert to tibble
+retail <- as_tibble(onlineretail)
+
+
+# inspect dataset structure
+retail %>% colnames()  # list of column names
+retail %>% nrow()  # how many rows are in data frame?
+retail %>% dim()  # dimensions of the data frame?
+retail %>% head()  # see the first 6 rows of data frame.  also tail()
+retail %>% str()  # see list of columns and data types (numeric, character, etc)
+retail %>% summary()  #Statistical summary of data. Mainly for numerics
+
+# remove onlineretail dataset 
+rm(list = grep("^onlineretail", ls(), value = TRUE))
+
+```
+
+## clean up and add data to prepare for analysis
+
+```{r}
 retail <- retail[complete.cases(retail), ]
 
 retail <- retail %>% mutate(Description = as.factor(Description))
@@ -61,7 +92,9 @@ retail$InvoiceNo <- as.numeric(as.character(retail$InvoiceNo))
 glimpse(retail)
 
 colnames(retail)
+
 ```
+
 
 
 ## What time do people often purchase online?
@@ -82,4 +115,66 @@ retail %>%
 # conclusion 
 # There is a clear bias between the hour of day and order volume. Most orders happened between 10:00–15:00
 ```
+
+## search for all rows with invoice no. 576339
+
+```{r}
+
+retail %>% filter(InvoiceNo == '576339')
+
+```
+
+
+## count occurrences for each invoice no
+
+```{r}
+
+retail %>% 
+  group_by(InvoiceNo) %>% 
+  filter(n() > 1) %>% 
+  na.omit() %>% # drop rows containing missing values
+  summarize(count = n()) %>% 
+  arrange(desc(count))
+
+```
+
+```{r}
+
+retail %>% colnames()
+
+```
+
+
+
+## How many items each customer buy?
+
+```{r}
+items_by_each_customer <- 
+  retail |> 
+  group_by(InvoiceNo) %>% 
+  summarize(n_items = mean(Quantity)) %>% 
+  arrange(desc(n_items))
+
+items_by_each_customer
+
+ggplot(data = items_by_each_customer, aes(x=n_items))+
+  geom_histogram(fill="indianred", bins = 100000) + 
+  geom_rug()+
+  coord_cartesian(xlim=c(0,80))
+  
+  
+# retail %>% 
+#   group_by(InvoiceNo) %>% 
+#   summarize(n_items = mean(Quantity)) %>%
+#   ggplot(aes(x=n_items))+
+#   geom_histogram(fill="indianred", bins = 100000) + 
+#   geom_rug()+
+#   coord_cartesian(xlim=c(0,80))
+
+# conclusion 
+# People mostly purchased less than 10 items (less than 10 items in each invoice)
+```
+
+
+
 
