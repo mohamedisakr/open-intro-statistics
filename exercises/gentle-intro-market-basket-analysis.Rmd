@@ -36,21 +36,42 @@ install.packages("onlineretail")
 
 
 ## load packages
+```{r}
+pacman::p_load(
+  tidyverse,
+  readxl,
+  knitr,
+  ggplot2,
+  lubridate,
+  arules,
+  arulesViz,
+  plyr,
+  here,
+  conflicted,
+  onlineretail
+)
+
+```
+
 
 ```{r}
-
-library(tidyverse)
+# library(pacman)
+# 
+# library(tidyverse)
 # library(readxl)
-library(knitr)
-library(ggplot2)
-library(lubridate)
-library(arules)
-library(arulesViz)
-library(here)
+# library(knitr)
+# library(ggplot2)
+# library(lubridate)
+# library(arules)
+# library(arulesViz)
 # library(plyr)
+# library(here)
+# library(conflicted)
+# 
+# # load data set from onlineretail package
+# library(onlineretail)
 
-# load data set from onlineretail package
-library(onlineretail)
+
 ```
 
 ## data preprocessing and exploring
@@ -204,6 +225,37 @@ ggplot(data = top_10_best_sellers, aes(x = reorder(Description, count), y = coun
 
 ```
 
+## transform data frame into transactions
+### split data frame it into pieces
+```{r}
+
+retail_sorted <- retail[order(retail$CustomerID),]
+
+# split data frame it into pieces based on one or more factors, computes on the pieces, and then returns the results as a data frame
+itemList <- ddply(retail,c("CustomerID","Date"), 
+                       function(df1)paste(df1$Description, collapse = ","))
+
+```
+
+
+### keep only transactions
+
+```{r}
+
+# item transactions only needed, so remove CustomerID and Date columns
+itemList$CustomerID <- NULL
+itemList$Date <- NULL
+colnames(itemList) <- c("items")
+
+```
+
+### save the data frame to a csv file and check whether our transaction format is correct.
+
+```{r}
+
+write_csv(itemList, here::here("data", "market-basket.csv"))
+
+```
 
 
 
