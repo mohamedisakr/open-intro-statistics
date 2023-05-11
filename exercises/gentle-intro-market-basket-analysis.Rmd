@@ -272,6 +272,37 @@ retail_transaction %>% summary()
 
 ```
 
+## item frequency plot which shows that distribution of the data is right skewed
+```{r}
+itemFrequencyPlot(retail_transaction, topN = 20, type = 'absolute')
+
+```
+
+## creating some rules 
+
+```{r}
+
+# all rules have support of at least 0.1% and confidence of at least 80%
+rules <- apriori(retail_transaction, parameter = list(supp = 0.001, conf = 0.8))
+
+# sort the rules by decreasing confidence
+rules <- sort(rules, by = 'confidence', decreasing = TRUE)
+
+rules %>% summary()
+
+# inspect the top 10 
+top_10_rules <- rules[1:10]
+
+top_10_rules %>% inspect()
+
+# visualize top 10 rules
+plot(top_10_rules)
+
+plot(top_10_rules, method = 'graph')
+
+plot(top_10_rules, method = 'grouped')
+
+```
 
 
 
