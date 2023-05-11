@@ -28,15 +28,16 @@ knitr::opts_chunk$set(echo = TRUE)
 ## install packages
 
 ```{r}
-install.packages("readxl")
-
-install.packages("onlineretail")
+# install.packages("readxl")
+# 
+# install.packages("onlineretail")
 
 ```
 
 
 ## load packages
 ```{r}
+if(!require("pacman")) install.packages("pacman")
 pacman::p_load(
   tidyverse,
   readxl,
@@ -104,8 +105,8 @@ rm(list = grep("^onlineretail", ls(), value = TRUE))
 
 retail <- retail[complete.cases(retail), ]
 
-retail <- retail %>% mutate(Description = as.factor(Description))
-retail <- retail %>% mutate(Country = as.factor(Country))
+retail <- retail %>% dplyr::mutate(Description = as.factor(Description))
+retail <- retail %>% dplyr::mutate(Country = as.factor(Country))
 
 retail$Date <- as.Date(retail$InvoiceDate)
 retail$Time <- format(retail$InvoiceDate,"%H:%M:%S")
@@ -169,11 +170,11 @@ retail %>% filter(InvoiceNo == '576339') %>% arrange(desc(Quantity))
 ```{r}
 
 retail %>% 
-  group_by(InvoiceNo) %>% 
-  filter(n() > 1) %>% 
+  dplyr::group_by(InvoiceNo) %>% 
+  dplyr::filter(n() > 1) %>% 
   na.omit() %>% # drop rows containing missing values
-  summarize(count = n()) %>% 
-  arrange(desc(count))
+  dplyr::summarize(count = n()) %>% 
+  dplyr::arrange(desc(count))
 
 ```
 
@@ -184,9 +185,9 @@ retail %>%
 # group by invoice no
 items_by_each_customer <- 
   retail %>% 
-  group_by(InvoiceNo) %>% 
-  summarize(total_item_count = mean(Quantity)) %>% #  sum(Quantity)
-  arrange(desc(total_item_count))
+  dplyr::group_by(InvoiceNo) %>% 
+  dplyr::summarize(total_item_count = mean(Quantity)) %>% #  sum(Quantity)
+  dplyr::arrange(desc(total_item_count))
 
 items_by_each_customer
 
@@ -205,9 +206,9 @@ ggplot(data = items_by_each_customer, aes(x = total_item_count))+
 
 top_10_best_sellers <- as_tibble(
   retail %>% 
-  group_by(StockCode, Description) %>% 
-  summarize(count = n()) %>% 
-  arrange(desc(count)) #%>% 
+  dplyr::group_by(StockCode, Description) %>% 
+  dplyr::summarize(count = n()) %>% 
+  dplyr::arrange(desc(count)) #%>% 
   # slice_max(order_by = count, n = 10)
   # top_n(10, count)
 )
@@ -229,7 +230,7 @@ ggplot(data = top_10_best_sellers, aes(x = reorder(Description, count), y = coun
 ### split data frame it into pieces
 ```{r}
 
-retail_sorted <- retail[order(retail$CustomerID),]
+# retail_sorted <- retail[order(retail$CustomerID),]
 
 # split data frame it into pieces based on one or more factors, computes on the pieces, and then returns the results as a data frame
 itemList <- ddply(retail,c("CustomerID","Date"), 
@@ -259,7 +260,9 @@ write_csv(itemList, here::here("data", "market-basket.csv"), quote = "none")
 
 ### convert data frame to arules transaction data
 ```{r}
-retail_transaction <- read.transactions(here::here("data", "market-basket.csv"), format = 'basket', sep = ',')
+library(here)
+retail_transaction <- 
+  read.transactions(here::here("data", "market-basket.csv"), format = 'basket', sep = ',')
 
 ```
 
@@ -295,14 +298,117 @@ top_10_rules <- rules[1:10]
 
 top_10_rules %>% inspect()
 
-# visualize top 10 rules
-plot(top_10_rules)
+```
+
+
+## visualize scatter plot
+```{r}
+
+plot(top_10_rules, method = "scatterplot")
+
+```
+
+## visualize interactive scatter plot
+```{r}
+plot(top_10_rules, measure=c("support", "lift"), shading = "confidence",engine='interactive')
+
+# plot(top_10_rules, method = "scatterplot")
+
+```
+
+## visualize graph
+```{r}
 
 plot(top_10_rules, method = 'graph')
+
+```
+
+## visualize grouped matrix
+```{r}
 
 plot(top_10_rules, method = 'grouped')
 
 ```
+
+
+
+
+## interactive scatter plot
+
+```{r}
+plot(rules, measure=c("support", "lift"), 
+          shading = "confidence",
+          engine='interactive')
+
+
+```
+
+## visualize the relationship between the metrics
+
+### Two-key plot is a scatterplot with shading = "order"
+```{r}
+
+plot(top_10_rules, shading="order", control=list(main = "Two-key plot", 
+  col=rainbow(5)))
+
+```
+
+### 2D matrix with shading
+```{r}
+plot(top_10_rules, method="matrix", measure="lift")
+
+plot(top_10_rules, method="matrix", measure="lift", control=list(reorder = "support/confidence"))
+
+```
+
+### 3D matrix
+```{r}
+plot(top_10_rules, method="matrix3D", measure="lift")
+
+plot(top_10_rules, method="matrix3D", measure="lift", control=list(reorder = "support/confidence"))
+
+
+```
+
+
+### matrix with two measures
+```{r}
+
+plot(top_10_rules, method="matrix", measure=c("lift", "confidence"))
+
+plot(top_10_rules, method="matrix", measure=c("lift", "confidence"), 
+	control=list(reorder = "support/confidence"))
+
+```
+
+### graphs only work well with very few rules
+```{r}
+
+## igraph layout generators can be used (see ? igraph::layout_)
+
+# plot(top_10_rules, method="graph", control=list(layout=igraph::layout_in_circle(), igraph::is_igraph()))
+# 
+# plot(top_10_rules, method="graph", control=list(
+#   layout=igraph::with_graphopt(spring.const=5, mass=50)))
+
+```
+## parallel coordinates plot
+```{r}
+
+plot(top_10_rules, method="paracoord")
+plot(top_10_rules, method="paracoord", control=list(reorder=TRUE))
+
+```
+
+<!-- ## Doubledecker plot only works for a single rule -->
+<!-- # ```{r} -->
+<!-- #  -->
+<!-- # oneRule <- sample(rules, 1) -->
+<!-- # plot(oneRule, method="doubledecker", data = top_10_rules) -->
+<!-- #  -->
+<!-- # ``` -->
+
+
 
 
 
