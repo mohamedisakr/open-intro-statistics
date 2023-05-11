@@ -49,6 +49,7 @@ pacman::p_load(
   plyr,
   here,
   conflicted,
+  RColorBrewer,
   onlineretail
 )
 
@@ -277,28 +278,53 @@ retail_transaction %>% summary()
 
 ## item frequency plot which shows that distribution of the data is right skewed
 ```{r}
-itemFrequencyPlot(retail_transaction, topN = 20, type = 'absolute')
+# itemFrequencyPlot(retail_transaction, topN = 20, type = 'absolute')
+
+
+arules::itemFrequencyPlot(retail_transaction,
+   topN=20,
+   col=brewer.pal(8,'Pastel2'),
+   main='Relative Item Frequency Plot',
+   type="relative",
+   ylab="Item Frequency (Relative)")
 
 ```
 
 ## creating some rules 
 
+### all rules have support of at least 0.1% and confidence of at least 80%
 ```{r}
 
-# all rules have support of at least 0.1% and confidence of at least 80%
-rules <- apriori(retail_transaction, parameter = list(supp = 0.001, conf = 0.8))
+rules <- apriori(retail_transaction, parameter = list(support = 0.001, confidence = 0.8))
 
-# sort the rules by decreasing confidence
+```
+
+### remove redundant rule
+```{r}
+
+rules <- rules[!is.redundant(rules)]
+
+```
+
+### sort the rules by decreasing confidence
+```{r}
 rules <- sort(rules, by = 'confidence', decreasing = TRUE)
 
 rules %>% summary()
 
-# inspect the top 10 
+```
+
+
+### inspect the top 10 
+```{r}
+
 top_10_rules <- rules[1:10]
 
 top_10_rules %>% inspect()
 
 ```
+
+
 
 
 ## visualize scatter plot
@@ -310,7 +336,7 @@ plot(top_10_rules, method = "scatterplot")
 
 ## visualize interactive scatter plot
 ```{r}
-plot(top_10_rules, measure=c("support", "lift"), shading = "confidence",engine='interactive')
+plot(top_10_rules, measure=c("support", "lift"), shading = "confidence", engine = 'interactive')
 
 # plot(top_10_rules, method = "scatterplot")
 
