@@ -116,13 +116,18 @@ a <- hms(as.character(retail$Time))
 
 retail$Hour = hour(a)
 
+# remove variable a
+rm(list = grep("^a", ls(), value = TRUE))
+
 # count hours
 n_distinct(retail$Hour)
 retail %>% distinct(Hour)
 
+# visualize rush hours
 retail %>% 
   ggplot(aes( x = Hour)) + 
-  geom_histogram(stat="count", bins = 15, fill="indianred") #  
+  geom_histogram(stat="count", bins = 15, fill="indianred") + #
+  labs(x = "Purchasing Time (for every hour)", y = "No. of People")   
 
 
 # conclusion 
@@ -159,12 +164,12 @@ retail %>%
 items_by_each_customer <- 
   retail %>% 
   group_by(InvoiceNo) %>% 
-  summarize(n_items = mean(Quantity)) %>% #  sum(Quantity)
-  arrange(desc(n_items))
+  summarize(total_item_count = mean(Quantity)) %>% #  sum(Quantity)
+  arrange(desc(total_item_count))
 
 items_by_each_customer
 
-ggplot(data = items_by_each_customer, aes(x=n_items))+
+ggplot(data = items_by_each_customer, aes(x = total_item_count))+
   geom_histogram(fill="indianred", bins = 100000) + 
   geom_rug()+
   coord_cartesian(xlim=c(0,80))
