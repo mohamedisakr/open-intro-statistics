@@ -253,9 +253,25 @@ colnames(itemList) <- c("items")
 
 ```{r}
 
-write_csv(itemList, here::here("data", "market-basket.csv"))
+write_csv(itemList, here::here("data", "market-basket.csv"), quote = "none")
 
 ```
+
+### convert data frame to arules transaction data
+```{r}
+retail_transaction <- read.transactions(here::here("data", "market-basket.csv"), format = 'basket', sep = ',')
+
+```
+
+### inspect transaction data
+```{r}
+
+retail_transaction %>% str()
+
+retail_transaction %>% summary()
+
+```
+
 
 
 
