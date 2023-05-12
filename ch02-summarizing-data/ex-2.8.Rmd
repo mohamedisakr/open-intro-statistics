@@ -1,0 +1,90 @@
+---
+title: "EXAMPLE 2.8"
+author: "Awesome Me"
+date: "2023-05-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## EXAMPLE 2.8 pp 45
+
+
+
+## load packages
+```{r}
+if(!require("pacman")) install.packages("pacman")
+pacman::p_load(
+  tidyverse,
+  ggplot2,
+  here,
+  usdata,
+  onlineretail
+)
+
+```
+
+```{r}
+
+# load loan data set
+data("county")
+
+county %>% head()
+
+county %>% colnames()
+
+```
+
+Suppose we want to compute the average income per person in the US. To do so, we might first
+think to take the mean of the per capita incomes across the 3,142 counties in the county data set. What would be a better approach?
+
+```{r}
+total_county_count <- n_distinct(county$name)
+total_county_count
+
+```
+```{r}
+total_population_each_county <- county %>% 
+  group_by(name) %>% 
+  summarise(total_population = sum(pop2010)) %>% arrange(desc(total_population))
+
+total_population_each_county
+```
+
+
+```{r}
+total_income_each_county <- 
+  county %>% 
+  group_by(name) %>% 
+  summarise(total_income = sum(median_hh_income)) %>% arrange(desc(total_income))
+total_income_each_county
+
+```
+```{r}
+sum_total_income <- sum(total_income_each_county$total_income, na.rm = TRUE)
+sum_total_income
+
+```
+
+
+```{r}
+
+sum_total_population <- sum(total_population_each_county$total_population, na.rm = TRUE)
+
+sum_total_population
+
+```
+
+```{r}
+# Instead, we should compute the total income for each county, add up all the counties’ totals, and then divide by the number of people in all the counties.
+
+# If we completed these steps with the county data, we would find that the per capita income for the US is $30,861. 
+
+per_capita_income <- sum_total_income / sum_total_population
+per_capita_income
+
+```
+
+
