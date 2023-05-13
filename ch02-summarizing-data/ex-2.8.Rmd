@@ -48,7 +48,7 @@ total_county_count
 ```{r}
 total_population_each_county <- county %>% 
   group_by(name) %>% 
-  summarise(total_population = sum(pop2010)) %>% arrange(desc(total_population))
+  summarise(total_population = sum(pop2017)) %>% arrange(desc(total_population))
 
 total_population_each_county
 ```
@@ -87,4 +87,19 @@ per_capita_income
 
 ```
 
+```{r}
+# weighted mean (average)
+# The sum of all values times a weight divided by the sum of the weights.
+
+county_name_list <- n_distinct(county$name)
+county_name_list
+
+# weighted_mean = as.numeric( weighted.mean(county$median_hh_income, county$pop2017,  na.rm = TRUE)) * 1L # county_name_list ,
+
+weighted_mean = as.double( weighted.mean(county$median_hh_income, county$pop2017,  na.rm = TRUE)) * 1.0 # county_name_list ,
+
+weighted_mean
+
+
+```
 
