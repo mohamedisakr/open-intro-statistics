@@ -1,0 +1,441 @@
+---
+title: "IBM HR Analytics Employee Attrition & Performance"
+author: "Awesome Me"
+date: "2023-05-14"
+link-citations: true
+output: html_document
+---
+
+### IBM HR Analytics Employee Attrition & Performance
+#### https://www.kaggle.com/datasets/pavansubhasht/ibm-hr-analytics-attrition-dataset/code
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## install h2o
+```{r}
+# remove any previously installed H2O packages for R.
+if ("package:h2o" %in% search()) { detach("package:h2o", unload=TRUE) }
+
+if ("h2o" %in% rownames(installed.packages())) { remove.packages("h2o") }
+
+# download packages that H2O depends on.
+pkgs <- c("RCurl","jsonlite")
+for (pkg in pkgs) {
+  if (! (pkg %in% rownames(installed.packages()))) { install.packages(pkg) }
+}
+
+# download and install the H2O package for R
+install.packages("h2o", type="source", repos=(c("http://h2o-release.s3.amazonaws.com/h2o/latest_stable_R")))
+
+```
+
+
+## load packages
+```{r}
+if(!require("pacman")) install.packages("pacman")
+pacman::p_load(
+ h2o # initialize H2O 
+)
+
+# library(h2o) # initialize H2O 
+h2o.init()
+
+```
+
+### set seed for reproducibility
+```{r}
+# implement or use packages such as bruceR or liver
+min_max <- function(x) 
+{
+  return ((x - min(x)) / (max(x) - min(x)))
+}
+
+```
+
+
+
+```{r}
+# library(pacman)
+# 
+# library(tidyverse)
+# library(readxl)
+# library(knitr)
+# library(ggplot2)
+# library(lubridate)
+# library(arules)
+# library(arulesViz)
+# library(plyr)
+# library(here)
+# library(conflicted)
+# 
+# # load data set from onlineretail package
+# library(onlineretail)
+
+
+```
+
+## data preprocessing and exploring
+
+```{r}
+# read excel file
+# retail <- read_excel(here('data', 'online_retail.xlsx'))
+# retail
+
+# rename data set & convert to tibble
+retail <- as_tibble(onlineretail)
+
+
+# inspect dataset structure
+retail %>% colnames()  # list of column names
+retail %>% nrow()  # how many rows are in data frame?
+retail %>% dim()  # dimensions of the data frame?
+retail %>% head()  # see the first 6 rows of data frame.  also tail()
+retail %>% str()  # see list of columns and data types (numeric, character, etc)
+retail %>% summary()  #Statistical summary of data. Mainly for numerics
+
+# remove onlineretail dataset 
+rm(list = grep("^onlineretail", ls(), value = TRUE))
+
+```
+
+## clean up and add data to prepare for analysis
+
+```{r}
+
+retail <- retail[complete.cases(retail), ]
+
+retail <- retail %>% dplyr::mutate(Description = as.factor(Description))
+retail <- retail %>% dplyr::mutate(Country = as.factor(Country))
+
+retail$Date <- as.Date(retail$InvoiceDate)
+retail$Time <- format(retail$InvoiceDate,"%H:%M:%S")
+retail$InvoiceNo <- as.numeric(as.character(retail$InvoiceNo))
+
+# find columns with NA’s
+colSums(is.na(retail)) > 0
+
+```
+
+## count no of customers
+
+```{r}
+n_distinct(retail$CustomerID)
+
+```
+
+
+## What time do people often purchase online?
+
+```{r}
+# to find the answer to this question, we need to extract “hour” from the time column.
+
+retail %>% str()
+
+retail$Time <- as.factor(retail$Time)
+
+a <- hms(as.character(retail$Time))
+
+retail$Hour = hour(a)
+
+# remove variable a
+rm(list = grep("^a", ls(), value = TRUE))
+
+# count hours
+n_distinct(retail$Hour)
+retail %>% distinct(Hour)
+
+# visualize rush hours
+retail %>% 
+  ggplot(aes( x = Hour)) + 
+  geom_histogram(stat="count", bins = 15, fill="indianred") + #
+  labs(x = "Purchasing Time (for every hour)", y = "No. of People")   
+
+
+# conclusion 
+# There is a clear bias between the hour of day and order volume. Most orders happened between 10:00–15:00
+```
+
+## search for all rows with invoice no. 576339 (highest count of row no)
+
+```{r}
+
+retail %>% filter(InvoiceNo == '576339') %>% arrange(desc(Quantity))
+
+```
+
+
+## count occurrences for each invoice no
+
+```{r}
+
+retail %>% 
+  dplyr::group_by(InvoiceNo) %>% 
+  dplyr::filter(n() > 1) %>% 
+  na.omit() %>% # drop rows containing missing values
+  dplyr::summarize(count = n()) %>% 
+  dplyr::arrange(desc(count))
+
+```
+
+
+## How many items each customer buy?
+
+```{r}
+# group by invoice no
+items_by_each_customer <- 
+  retail %>% 
+  dplyr::group_by(InvoiceNo) %>% 
+  dplyr::summarize(total_item_count = mean(Quantity)) %>% #  sum(Quantity)
+  dplyr::arrange(desc(total_item_count))
+
+items_by_each_customer
+
+ggplot(data = items_by_each_customer, aes(x = total_item_count))+
+  geom_histogram(fill="indianred", bins = 100000) + 
+  geom_rug()+
+  coord_cartesian(xlim=c(0,80))
+  
+  
+# conclusion 
+# People mostly purchased less than 10 items (less than 10 items in each invoice)
+```
+
+## Top 10 best sellers
+```{r}
+
+top_10_best_sellers <- as_tibble(
+  retail %>% 
+  dplyr::group_by(StockCode, Description) %>% 
+  dplyr::summarize(count = n()) %>% 
+  dplyr::arrange(desc(count)) #%>% 
+  # slice_max(order_by = count, n = 10)
+  # top_n(10, count)
+)
+
+
+top_10_best_sellers <- top_10_best_sellers %>% head(10)
+
+top_10_best_sellers %>% str()
+
+
+# top_10_best_sellers %>%
+ggplot(data = top_10_best_sellers, aes(x = reorder(Description, count), y = count))+
+  geom_bar(stat="identity",fill="indian red")+
+  coord_flip()
+
+```
+
+## transform data frame into transactions
+### split data frame it into pieces
+```{r}
+
+# retail_sorted <- retail[order(retail$CustomerID),]
+
+# split data frame it into pieces based on one or more factors, computes on the pieces, and then returns the results as a data frame
+itemList <- ddply(retail,c("CustomerID","Date"), 
+                       function(df1)paste(df1$Description, collapse = ","))
+
+```
+
+
+### keep only transactions
+
+```{r}
+
+# item transactions only needed, so remove CustomerID and Date columns
+itemList$CustomerID <- NULL
+itemList$Date <- NULL
+colnames(itemList) <- c("items")
+
+```
+
+### save the data frame to a csv file and check whether our transaction format is correct.
+
+```{r}
+
+write_csv(itemList, here::here("data", "market-basket.csv"), quote = "none")
+
+```
+
+### convert data frame to arules transaction data
+```{r}
+library(here)
+retail_transaction <- 
+  read.transactions(here::here("data", "market-basket.csv"), format = 'basket', sep = ',')
+
+```
+
+### inspect transaction data
+```{r}
+
+retail_transaction %>% str()
+
+retail_transaction %>% summary()
+
+```
+
+## item frequency plot which shows that distribution of the data is right skewed
+```{r}
+# itemFrequencyPlot(retail_transaction, topN = 20, type = 'absolute')
+
+
+arules::itemFrequencyPlot(retail_transaction,
+   topN=20,
+   col=brewer.pal(8,'Pastel2'),
+   main='Relative Item Frequency Plot',
+   type="relative",
+   ylab="Item Frequency (Relative)")
+
+```
+
+## creating some rules 
+
+### all rules have support of at least 0.1% and confidence of at least 80%
+```{r}
+
+rules <- apriori(retail_transaction, parameter = list(support = 0.001, confidence = 0.8))
+
+```
+
+### remove redundant rule
+```{r}
+
+rules <- rules[!is.redundant(rules)]
+
+```
+
+### sort the rules by decreasing confidence
+```{r}
+rules <- sort(rules, by = 'confidence', decreasing = TRUE)
+
+rules %>% summary()
+
+```
+
+
+### inspect the top 10 
+```{r}
+
+top_10_rules <- rules[1:10]
+
+top_10_rules %>% inspect()
+
+```
+
+
+
+
+## visualize scatter plot
+```{r}
+
+plot(top_10_rules, method = "scatterplot")
+
+```
+
+## visualize interactive scatter plot
+```{r}
+plot(top_10_rules, measure=c("support", "lift"), shading = "confidence", engine = 'interactive')
+
+# plot(top_10_rules, method = "scatterplot")
+
+```
+
+## visualize graph
+```{r}
+
+plot(top_10_rules, method = 'graph')
+
+```
+
+## visualize grouped matrix
+```{r}
+
+plot(top_10_rules, method = 'grouped')
+
+```
+
+
+
+
+## interactive scatter plot
+
+```{r}
+plot(rules, measure=c("support", "lift"), 
+          shading = "confidence",
+          engine='interactive')
+
+
+```
+
+## visualize the relationship between the metrics
+
+### Two-key plot is a scatterplot with shading = "order"
+```{r}
+
+plot(top_10_rules, shading="order", control=list(main = "Two-key plot", 
+  col=rainbow(5)))
+
+```
+
+### 2D matrix with shading
+```{r}
+plot(top_10_rules, method="matrix", measure="lift")
+
+plot(top_10_rules, method="matrix", measure="lift", control=list(reorder = "support/confidence"))
+
+```
+
+### 3D matrix
+```{r}
+plot(top_10_rules, method="matrix3D", measure="lift")
+
+plot(top_10_rules, method="matrix3D", measure="lift", control=list(reorder = "support/confidence"))
+
+
+```
+
+
+### matrix with two measures
+```{r}
+
+plot(top_10_rules, method="matrix", measure=c("lift", "confidence"))
+
+plot(top_10_rules, method="matrix", measure=c("lift", "confidence"), 
+	control=list(reorder = "support/confidence"))
+
+```
+
+### graphs only work well with very few rules
+```{r}
+
+## igraph layout generators can be used (see ? igraph::layout_)
+
+# plot(top_10_rules, method="graph", control=list(layout=igraph::layout_in_circle(), igraph::is_igraph()))
+# 
+# plot(top_10_rules, method="graph", control=list(
+#   layout=igraph::with_graphopt(spring.const=5, mass=50)))
+
+```
+## parallel coordinates plot
+```{r}
+
+plot(top_10_rules, method="paracoord")
+plot(top_10_rules, method="paracoord", control=list(reorder=TRUE))
+
+```
+
+<!-- ## Doubledecker plot only works for a single rule -->
+<!-- # ```{r} -->
+<!-- #  -->
+<!-- # oneRule <- sample(rules, 1) -->
+<!-- # plot(oneRule, method="doubledecker", data = top_10_rules) -->
+<!-- #  -->
+<!-- # ``` -->
+
+
+
+
+
