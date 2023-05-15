@@ -40,6 +40,7 @@ knitr::opts_chunk$set(echo = TRUE)
 if(!require("pacman")) install.packages("pacman")
 pacman::p_load(
   tidyverse,
+  janitor,
   readxl,
   knitr,
   ggplot2,
@@ -77,17 +78,43 @@ pacman::p_load(
 ```
 
 ## data preprocessing and exploring
-
+#### rename data set & convert to tibble
 ```{r}
-# read excel file
-# retail <- read_excel(here('data', 'online_retail.xlsx'))
-# retail
 
-# rename data set & convert to tibble
 retail <- as_tibble(onlineretail)
 
+```
 
-# inspect dataset structure
+#### examining duplicate records -> for InvoiceNo, StockCode, Description combination
+
+```{r}
+
+duplicated_rows <- retail %>% 
+  get_dupes(InvoiceNo, StockCode, Description, InvoiceDate, CustomerID)
+
+duplicated_rows
+
+```
+
+#### group duplicate records by invoice no
+
+```{r}
+
+duplicated_rows_by_invoice_no <- duplicated_rows %>% 
+  group_by(InvoiceNo) %>% 
+  # dplyr::filter(n() > 1) %>% 
+  # na.omit() %>% # drop rows containing missing values
+  dplyr::summarize(count = n()) %>% 
+  dplyr::arrange(desc(count))
+
+duplicated_rows_by_invoice_no
+
+```
+
+
+#### inspect dataset structure 
+```{r}
+
 retail %>% colnames()  # list of column names
 retail %>% nrow()  # how many rows are in data frame?
 retail %>% dim()  # dimensions of the data frame?
@@ -95,10 +122,15 @@ retail %>% head()  # see the first 6 rows of data frame.  also tail()
 retail %>% str()  # see list of columns and data types (numeric, character, etc)
 retail %>% summary()  #Statistical summary of data. Mainly for numerics
 
-# remove onlineretail dataset 
+
+```
+#### remove onlineretail dataset 
+```{r}
+
 rm(list = grep("^onlineretail", ls(), value = TRUE))
 
 ```
+
 
 ## clean up and add data to prepare for analysis
 
