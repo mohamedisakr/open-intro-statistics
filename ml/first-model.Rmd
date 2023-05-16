@@ -29,7 +29,9 @@ pacman::p_load(
   psych,
   reshape2,
   DataExplorer,
-  scales
+  scales,
+  boot,
+  randomForest
 )
 
 ```
@@ -263,10 +265,115 @@ cat_housing %>% str()
 scaled_housing_num = scale(cat_housing)
 
 
-head(scaled_housing_num)
+scaled_housing_num %>% head()
+
+scaled_housing_num %>% str()
+
+housing <- as_tibble(scaled_housing_num)
+
+write_csv(housing, "clean-housing.csv")
 
 ```
 
+## splitting dataset to train & test
+```{r}
+
+# Set a random seed so that same sample can be reproduced in future runs
+set.seed(23278) 
+
+sample <- sample.int(n = nrow(housing), size = floor(.8*nrow(housing)), replace = F)
+
+# train dataset
+train <- housing[sample, ] # just the samples
+
+# test dataset
+test <- housing[-sample, ] #everything but the samples
+
+```
+## check for length of train + test = before splitting
+```{r}
+nrow(housing) == nrow(train) + nrow(test)
+
+```
+
+## predictive models test
+```{r}
+
+glm_house <- glm(median_house_value ~ median_income + mean_rooms + population, data = housing)
+
+```
+
+```{r}
+
+k_fold_cv_error <- cv.glm(housing , glm_house, K = 5)
+
+# raw cross-validation estimate of prediction error, adjusted cross-validation estimate.
+k_fold_cv_error$delta
+  
+```
+
+```{r}
+
+glm_cv_rmse = sqrt(k_fold_cv_error$delta)[1]
+glm_cv_rmse # about 72,384 ... it is a start
+
+```
+
+## what parts of the model are callable?
+
+```{r}
+
+names(glm_house)
+
+```
+
+
+```{r}
+# we can say that of the three, median income had the biggest effect on housing price, but be careful and google lots before intrepreting coefficients!
+glm_house$coefficients
+
+```
+
+## Random forest model
+```{r}
+?randomForest
+
+names(train)
+
+```
+
+```{r}
+set.seed(23278)
+
+train_y = train[, 'median_house_value']
+train_x = train[, names(train) != 'median_house_value']
+
+train_y %>% head()
+train_y %>% str()
+
+
+train_x %>% head()
+
+```
+
+```{r}
+
+head(train_x$med)
+
+# rf_model = randomForest(train_x, y = train_y , ntree = 500, importance = TRUE)
+
+# due to error Warning: The response has five or fewer unique values.  Are you sure you want to do regression?Error in randomForest.default(train_x, y = train_y, ntree = 500, importance = TRUE) :   length of response must be the same as predictors
+
+# https://stackoverflow.com/questions/56943991/random-forest-error-message-response-has-five-or-fewer-unique-values
+
+# train_y$median_house_value <- as.factor(train_y$median_house_value)
+
+# still have the same error 
+rf_model = randomForest(train_x, y = train_y , ntree = 500, importance = TRUE)
+
+names(rf_model)
+
+```
 
 
 
