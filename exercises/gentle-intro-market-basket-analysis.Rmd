@@ -150,6 +150,8 @@ colSums(is.na(retail)) > 0
 
 ```
 
+
+
 ## count no of customers
 
 ```{r}

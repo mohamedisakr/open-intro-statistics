@@ -1,0 +1,147 @@
+---
+title: "Guid"
+author: "Awesome Me"
+date: "2023-05-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## load packages
+```{r warning = F}
+if(!require("pacman")) install.packages("pacman")
+pacman::p_load(
+  tidyverse,
+  janitor,
+  readxl,
+  knitr,
+  ggplot2,
+  lubridate,
+  arules,
+  arulesViz,
+  plyr,
+  here,
+  conflicted,
+  RColorBrewer,
+  skimr,
+  psych,
+  reshape2,
+  DataExplorer,
+  scales,
+  onlineretail
+)
+
+```
+
+
+
+## load dataset
+
+```{r}
+# https://archive.ics.uci.edu/ml/machine-learning-databases/00352/Online%20Retail.xlsx
+# df <- read_csv(here("data", ".csv"))
+# df %>% glimpse()
+
+retail <- as_tibble(onlineretail)
+retail %>% glimpse()
+
+
+```
+
+## inspect dataset structure 
+
+```{r}
+
+retail %>% colnames()  # list of column names
+retail %>% nrow()  # how many rows are in data frame?
+retail %>% dim()  # dimensions of the data frame?
+retail %>% head()  # see the first 6 rows of data frame.  also tail()
+retail %>% str()  # see list of columns and data types (numeric, character, etc)
+retail %>% summary()  #Statistical summary of data.
+
+
+```
+
+## examining duplicate records -> for InvoiceNo, StockCode, Description combination
+
+```{r}
+
+duplicated_rows <- retail %>% 
+  get_dupes(InvoiceNo, StockCode, Description, InvoiceDate, CustomerID)
+
+duplicated_rows
+
+```
+
+
+## remove temporary variables 
+```{r}
+
+rm(list = grep("^onlineretail", ls(), value = TRUE))
+
+```
+
+## checking distinct for the whole df or single column
+```{r}
+
+n_distinct(retail) 
+
+retail %>% colnames()
+  
+```
+
+## checking for NAs
+```{r}
+sum(is.na(retail))
+
+```
+
+## drop all na values (missing values)
+```{r}
+
+
+```
+
+
+## convert column data type
+```{r}
+
+
+```
+
+## delete column(s)
+```{r}
+
+
+```
+
+
+
+## normalization
+```{r}
+
+
+```
+
+
+## analyze if there are any correlations between variables
+```{r}
+# density plot
+retail %>% plot_density(ncol = 4, ggtheme = theme_minimal())
+
+# correlation plot
+corPlot(retail[, 2:7], upper = FALSE, scale = FALSE, main = "Correlation Sales")
+
+```
+
+
+
+
+
+
+
+
+
+
