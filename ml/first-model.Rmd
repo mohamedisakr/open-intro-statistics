@@ -1,7 +1,7 @@
 ---
-title: "Guid"
+title: "First Machine Learning Model"
 author: "Awesome Me"
-date: "2023-05-15"
+date: "2023-05-16"
 output: html_document
 ---
 
@@ -29,8 +29,7 @@ pacman::p_load(
   psych,
   reshape2,
   DataExplorer,
-  scales,
-  onlineretail
+  scales
 )
 
 ```
@@ -40,12 +39,17 @@ pacman::p_load(
 ## load dataset
 
 ```{r}
-# https://archive.ics.uci.edu/ml/machine-learning-databases/00352/Online%20Retail.xlsx
-# df <- read_csv(here("data", ".csv"))
-# df %>% glimpse()
+# https://www.kaggle.com/code/camnugent/introduction-to-machine-learning-in-r-tutorial
 
-retail <- as_tibble(onlineretail)
-retail %>% glimpse()
+
+
+# melbourne_data = read_csv(here::here("data", "melb_data.csv")) %>% as_tibble()
+
+# basedir <- here::here()
+# basedir
+
+housing = read_csv(here::here("housing.csv")) %>% as_tibble()
+# melbourne_data = read_csv(here::here("melb_data.csv")) %>% as_tibble()
 
 
 ```
@@ -54,22 +58,22 @@ retail %>% glimpse()
 
 ```{r}
 
-retail %>% colnames()  # list of column names
-retail %>% nrow()  # how many rows are in data frame?
-retail %>% dim()  # dimensions of the data frame?
-retail %>% head()  # see the first 6 rows of data frame.  also tail()
-retail %>% str()  # see list of columns and data types (numeric, character, etc)
-retail %>% summary()  #Statistical summary of data.
+housing %>% colnames()  # list of column names
+housing %>% nrow()  # how many rows are in data frame?
+housing %>% dim()  # dimensions of the data frame?
+housing %>% head()  # see the first 6 rows of data frame.  also tail()
+housing %>% str()  # see list of columns and data types (numeric, character, etc)
+housing %>% summary()  #Statistical summary of data.
 
 
 ```
 
-## examining duplicate records -> for InvoiceNo, StockCode, Description combination
+## examining duplicate records -> for col1, col2, ...
 
 ```{r}
 
-duplicated_rows <- retail %>% 
-  get_dupes(InvoiceNo, StockCode, Description, InvoiceDate, CustomerID)
+duplicated_rows <- housing %>% 
+  get_dupes()
 
 duplicated_rows
 
@@ -79,28 +83,28 @@ duplicated_rows
 ## remove temporary variables 
 ```{r}
 
-rm(list = grep("^onlineretail", ls(), value = TRUE))
+rm(list = grep("^duplicated", ls(), value = TRUE))
 
 ```
 
 ## checking distinct for the whole df or single column
 ```{r}
 
-n_distinct(retail) 
+n_distinct(housing) 
 
-retail %>% colnames()
-  
+
 ```
 
 ## checking for NAs
 ```{r}
-sum(is.na(retail))
+sum(is.na(housing))
 
 ```
 
 ## drop all na values (missing values)
 ```{r}
 
+housing <- housing %>% drop_na()
 
 ```
 
@@ -129,17 +133,139 @@ sum(is.na(retail))
 ## analyze if there are any correlations between variables
 ```{r}
 # density plot
-retail %>% plot_density(ncol = 4, ggtheme = theme_minimal())
+housing %>% plot_density(ncol = 4, ggtheme = theme_minimal())
 
 # correlation plot
-corPlot(retail[, 2:7], upper = FALSE, scale = FALSE, main = "Correlation Sales")
+corPlot(housing[, 2:7], upper = FALSE, scale = FALSE, main = "Correlation Sales")
+
+```
+
+## selecting prediction target
+```{r}
+# y = housing$Price
+# y %>% str
+
+```
+
+## selecting features 
+```{r}
+
+# housing_features <- c('Rooms', 'Bathroom', 'Landsize', 'Lattitude', 'Longtitude')
+# 
+# X = housing[housing_features]
+# 
+# X %>% str()
+# 
+# X %>% summary()
+# 
+# X %>% head()
+
+```
+```{r}
+
+par(mfrow=c(2,5))
+
+```
+
+```{r}
+colnames(housing)
+
+```
+
+```{r}
+
+ggplot(data = melt(housing), mapping = aes(x = value)) + 
+    geom_histogram(bins = 30) + facet_wrap(~variable, scales = 'free_x')
+
+```
+
+## fill missing values for total_bedrooms with its median
+```{r}
+
+housing$total_bedrooms[is.na(housing$total_bedrooms)] <- 
+  median(housing$total_bedrooms , na.rm = TRUE)
+
+sum(is.na(housing$total_bedrooms))
+
+```
+## fix the total columns - make them means
+```{r}
+housing$mean_bedrooms = housing$total_bedrooms/housing$households
+housing$mean_rooms = housing$total_rooms/housing$households
+
+drops = c('total_bedrooms', 'total_rooms')
+
+housing = housing[ , !(names(housing) %in% drops)]
+
+```
+
+## list ocean_proximity values
+```{r}
+housing %>% group_by(ocean_proximity) %>% 
+  # dplyr::filter(n() > 1) %>% 
+  # na.omit() %>% # drop rows containing missing values
+  dplyr::summarize(count = n()) %>% 
+  dplyr::arrange(desc(count))
+
+```
+## convert char to categorical
+```{r}
+
+str(housing$ocean_proximity)
+
+housing <- housing %>% dplyr::mutate(ocean_proximity = as.factor(ocean_proximity))
+
+str(housing$ocean_proximity)
+
+```
+## long to wide 
+### use pivot_wider converting categorial variables to boolean
+```{r}
+cat_housing <- housing %>% 
+  # select column "ocean_proximity" for cat_housing
+    # select(ocean_proximity) %>%
+# create columns "val" and "ID" (R needs a unique identifier for an anchor when pivoting)
+    dplyr::mutate(val = 1, ID = rownames(.)) %>%
+# split variables to columns, replace NA with 0
+    pivot_wider(names_from = ocean_proximity, values_from = val,
+                values_fill = list(val = 0)) %>%
+# drop column "ID"
+    select(-ID)
+
+cat_housing %>% colnames()
+
+```
+
+## rename columns name
+```{r}
+
+cat_housing <- cat_housing %>% 
+  dplyr::rename(near_bay = "NEAR BAY")
+
+cat_housing %>% colnames()
+
+cat_housing %>% str()
 
 ```
 
 
+## scale the numerical variables
+```{r}
+# drops = c('median_house_value')
+# 
+# housing_num =  housing[ , !(names(housing) %in% drops)]
+# 
+# housing_num %>% head()
+
+# housing_num %>% str()
 
 
+scaled_housing_num = scale(cat_housing)
 
+
+head(scaled_housing_num)
+
+```
 
 
 
